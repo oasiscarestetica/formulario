@@ -24,6 +24,10 @@
             }
         }
     </script>
+
+<!-- Biblioteca do Supabase para conectar ao CRM -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="./formulario2222222222_files/all.min.css">
     <!-- Google Fonts Inter -->
@@ -328,58 +332,66 @@
 
     <!-- SCRIPT DE INTEGRAÇÃO COM SUPABASE E WHATSAPP -->
     <script>
-        const SUPABASE_URL = 'https://pyodkkcmuoqrsnnifdqf.supabase.co/rest/v1';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5b2Rra2NtdW9xcnNubmlmZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMjY2MzEsImV4cCI6MjEwMTkwMjYzMX0.QSfkfTNraM9GAgzdFJ8fzXYcaj6MrzqlHodLzsJcIoA';
+    const SUPABASE_URL = 'https://pyodkkcmuoqrsnnifdqf.supabase.co/rest/v1';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5b2Rra2NtdW9xcnNubmlmZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMjY2MzEsImV4cCI6MjEwMTkwMjYzMX0.QSfkfTNraM9GAgzdFJ8fzXYcaj6MrzqlHodLzsJcIoA';
 
-        document.getElementById('whatsappForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+    document.getElementById('whatsappForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-            const btn = document.getElementById('btnSubmit');
-            const nome = document.getElementById('nome').value.trim();
-            const servicoSelecionado = document.querySelector('input[name="servico"]:checked')?.value || 'Não informado';
-            const veiculo = document.getElementById('veiculo').value.trim();
-            const ano = document.getElementById('ano').value.trim();
-            const cor = document.getElementById('cor').value.trim();
-            
-            btn.disabled = true;
-            btn.innerHTML = 'Redirecionando...';
+        const btn = document.getElementById('btnSubmit');
+        const nome = document.getElementById('nome').value.trim();
+        
+        // Validação básica
+        if (!nome) {
+            alert('Por favor, preencha seu nome.');
+            return;
+        }
 
-            const veiculoCompleto = `${veiculo} (${ano}) - ${cor}`;
-            const msg = `Olá! Quero agendar o serviço de ${servicoSelecionado} para meu ${veiculoCompleto}. Meu nome é ${nome}.`;
+        const servicoSelecionado = document.querySelector('input[name="servico"]:checked')?.value || 'Estética Automotiva';
+        const veiculo = document.getElementById('veiculo').value.trim() || 'Veículo';
+        const ano = document.getElementById('ano').value.trim() || '0000';
+        const cor = document.getElementById('cor').value.trim() || 'Cor';
+        
+        // Bloqueia o botão para evitar múltiplos cliques
+        btn.disabled = true;
+        btn.innerHTML = 'Enviando...';
 
-            // Tenta salvar no Supabase em segundo plano (sem quebrar o fluxo do WhatsApp se houver restrição RLS)
-            try {
-                await fetch(`${SUPABASE_URL}/pistas`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify({
-                        nome: nome,
-                        veiculo: veiculoCompleto,
-                        servico: servicoSelecionado,
-                        status: 'NOVO',
-                        telefone: 'Site'
-                    })
-                });
-            } catch (err) {
-                console.error("Aviso do Supabase (Painel):", err);
-            }
+        const veiculoCompleto = `${veiculo} (${ano}) - ${cor}`;
+        const msg = `Olá! Quero agendar o serviço de ${servicoSelecionado} para meu ${veiculoCompleto}. Meu nome é ${nome}.`;
 
-            // Abre o WhatsApp instantaneamente e de forma garantida
-            window.open(`https://wa.me/5516991408438?text=${encodeURIComponent(msg)}`, '_blank');
-            
-            // Restaura o botão
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-brands fa-whatsapp text-xl"></i> Enviar Pedido via WhatsApp';
-                document.getElementById('whatsappForm').reset();
-            }, 1500);
-        });
-    </script>
+        // Tenta salvar no Supabase
+        try {
+            await fetch(`${SUPABASE_URL}/pistas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    nome: nome,
+                    veiculo: veiculoCompleto,
+                    servico: servicoSelecionado,
+                    status: 'NOVO',
+                    telefone: 'Site'
+                })
+            });
+        } catch (err) {
+            console.warn("CRM Offline ou sem permissão, mas prosseguindo para o WhatsApp:", err);
+        }
+
+        // Abre o WhatsApp
+        window.open(`https://wa.me/5516991408438?text=${encodeURIComponent(msg)}`, '_blank');
+        
+        // Reseta o formulário e o botão após 2 segundos
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-brands fa-whatsapp text-xl"></i> Enviar Pedido via WhatsApp';
+            document.getElementById('whatsappForm').reset();
+        }, 2000);
+    });
+</script>
 
 
 </body></html>
