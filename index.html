@@ -216,7 +216,12 @@
 
                         <div>
                             <label for="nome" class="block text-xs text-brand-grayText mb-1">Seu Nome</label>
-                            <input type="text" id="nome" placeholder="Digite seu nome" required autocomplete="name" autocapitalize="words" enterkeyhint="send" class="campo-form w-full bg-neutral-900 border border-brand-border rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-brand-red transition-colors">
+                            <input type="text" id="nome" placeholder="Digite seu nome" required autocomplete="name" autocapitalize="words" enterkeyhint="next" class="campo-form w-full bg-neutral-900 border border-brand-border rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-brand-red transition-colors">
+                        </div>
+
+                        <div>
+                            <label for="telefone" class="block text-xs text-brand-grayText mb-1">Seu WhatsApp (com DDD)</label>
+                            <input type="tel" id="telefone" placeholder="(16) 99999-9999" required inputmode="tel" autocomplete="tel-national" maxlength="15" enterkeyhint="send" class="campo-form w-full bg-neutral-900 border border-brand-border rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-brand-red transition-colors">
                         </div>
                     </div>
 
@@ -445,6 +450,19 @@
         const SUPABASE_URL = 'https://pyodkkcmuoqrsnnifdqf.supabase.co/rest/v1';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5b2Rra2NtdW9xcnNubmlmZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMjY2MzEsImV4cCI6MjEwMTkwMjYzMX0.QSfkfTNraM9GAgzdFJ8fzXYcaj6MrzqlHodLzsJcIoA';
 
+        // Formata o telefone enquanto o cliente digita: (16) 99999-9999
+        function formatarTelefone(valor) {
+            const d = String(valor).replace(/\D/g, '').slice(0, 11);
+            if (d.length <= 2) return d ? `(${d}` : '';
+            if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+            if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+            return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+        }
+
+        document.getElementById('telefone').addEventListener('input', function () {
+            this.value = formatarTelefone(this.value);
+        });
+
         document.getElementById('whatsappForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -456,6 +474,15 @@
                 alert('Por favor, preencha seu nome.');
                 return;
             }
+
+            const campoTelefone = document.getElementById('telefone');
+            const digitosTelefone = campoTelefone.value.replace(/\D/g, '');
+            if (digitosTelefone.length < 10 || digitosTelefone.length > 11) {
+                alert('Por favor, informe seu WhatsApp com DDD. Ex: (16) 99999-9999');
+                campoTelefone.focus();
+                return;
+            }
+            const telefone = formatarTelefone(digitosTelefone);
 
             // Fecha o teclado virtual antes de sair da página
             if (document.activeElement) document.activeElement.blur();
@@ -491,7 +518,7 @@
                         veiculo: veiculoCompleto,
                         servico: servicoSelecionado,
                         status: 'NOVO',
-                        telefone: 'Site'
+                        telefone: telefone
                     })
                 });
             } catch (err) {
