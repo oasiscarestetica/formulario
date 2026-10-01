@@ -74,6 +74,11 @@
             scroll-margin-top: 1.5rem;
         }
 
+        /* Ponto onde a página abre: título "Monte seu Orçamento" com um pequeno respiro */
+        #inicio-formulario {
+            scroll-margin-top: 1rem;
+        }
+
         /* Quando o navegador rola até um campo focado, mantém-no afastado das bordas e do teclado */
         #whatsappForm input,
         #whatsappForm textarea {
@@ -151,7 +156,7 @@
     <!-- SEÇÃO DO FORMULÁRIO INTERATIVO -->
     <main id="orcamento" class="py-20 px-6 border-b border-brand-border">
         <div class="max-w-xl mx-auto">
-            <div class="text-center mb-10">
+            <div id="inicio-formulario" class="text-center mb-10">
                 <h2 class="text-2xl sm:text-3xl font-bold tracking-tight mb-3">Monte seu Orçamento</h2>
                 <p class="text-brand-grayText text-sm">Selecione o serviço desejado, informe os dados do seu veículo e receba o atendimento direto no WhatsApp.</p>
             </div>
@@ -405,6 +410,41 @@
     <footer class="border-t border-brand-border py-8 px-6 text-center text-xs text-brand-grayText">
         <p>© 2026 Oásis Car Estética. Todos os direitos reservados.</p>
     </footer>
+
+    <!-- 0) AO ABRIR O LINK, A PÁGINA JÁ MOSTRA O FORMULÁRIO (o cliente pode subir ou descer à vontade) -->
+    <script>
+        (function () {
+            // Impede o navegador de "lembrar" a posição antiga ao recarregar
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+            // Se o link tiver outra âncora (ex.: #passo-dados), respeita essa âncora
+            const ancora = location.hash.replace('#', '');
+            const alvoId = ancora === 'passo-dados' ? 'passo-dados' : 'inicio-formulario';
+            if (ancora && !['orcamento', 'passo-dados', 'inicio-formulario'].includes(ancora)) return;
+
+            // Assim que o cliente mexer na página, deixamos de reposicionar
+            let clienteMexeu = false;
+            const marcar = () => { clienteMexeu = true; };
+            ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(evento => {
+                window.addEventListener(evento, marcar, { once: true, passive: true });
+            });
+
+            function irParaFormulario() {
+                if (clienteMexeu) return;
+                const alvo = document.getElementById(alvoId);
+                if (alvo) alvo.scrollIntoView({ behavior: 'auto', block: 'start' });
+            }
+
+            // Repete enquanto estilos, fontes e ícones terminam de carregar (evita ficar desalinhado)
+            irParaFormulario();
+            requestAnimationFrame(irParaFormulario);
+            window.addEventListener('load', () => {
+                irParaFormulario();
+                setTimeout(irParaFormulario, 300);
+            });
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(irParaFormulario);
+        })();
+    </script>
 
     <!-- 1) ROLAGEM SUAVE ATÉ O PASSO 2 DO FORMULÁRIO -->
     <script>
