@@ -104,6 +104,42 @@
             max-width: 100vw;
         }
 
+        /* AVISO "ROLE PARA BAIXO" (só no telemóvel) */
+        .aviso-rolar {
+            position: fixed;
+            left: 50%;
+            bottom: calc(1rem + env(safe-area-inset-bottom));
+            z-index: 40;
+            transform: translate(-50%, 0);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.85rem 1.35rem;
+            border-radius: 9999px;
+            background: #dc2626;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(220, 38, 38, 0.18);
+            transition: opacity 250ms ease, transform 250ms ease;
+        }
+        .aviso-rolar.escondido {
+            opacity: 0;
+            transform: translate(-50%, 140%);
+            pointer-events: none;
+        }
+        .aviso-rolar .seta {
+            animation: setaPulo 1.2s ease-in-out infinite;
+        }
+        @keyframes setaPulo {
+            0%, 100% { transform: translateY(-2px); }
+            50% { transform: translateY(4px); }
+        }
+        @media (min-width: 768px) {
+            .aviso-rolar { display: none; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 scroll-behavior: auto !important;
@@ -411,6 +447,12 @@
         <p>© 2026 Oásis Car Estética. Todos os direitos reservados.</p>
     </footer>
 
+    <!-- AVISO FLUTUANTE PARA CONTINUAR O FORMULÁRIO (telemóvel) -->
+    <button type="button" id="avisoRolar" class="aviso-rolar escondido" aria-label="Rolar para baixo para continuar o orçamento">
+        <span id="avisoRolarTexto">Role para baixo para continuar</span>
+        <i class="fa-solid fa-arrow-down seta"></i>
+    </button>
+
     <!-- 0) AO ABRIR O LINK, A PÁGINA JÁ MOSTRA O FORMULÁRIO (o cliente pode subir ou descer à vontade) -->
     <script>
         (function () {
@@ -443,6 +485,54 @@
                 setTimeout(irParaFormulario, 300);
             });
             if (document.fonts && document.fonts.ready) document.fonts.ready.then(irParaFormulario);
+        })();
+    </script>
+
+    <!-- 3) AO ESCOLHER O SERVIÇO, A TELA DESCE SOZINHA PARA OS DADOS + AVISO "ROLE PARA BAIXO" -->
+    <script>
+        (function () {
+            const passoDados = document.getElementById('passo-dados');
+            const secaoForm = document.getElementById('orcamento');
+            const aviso = document.getElementById('avisoRolar');
+            const avisoTexto = document.getElementById('avisoRolarTexto');
+            if (!passoDados || !secaoForm || !aviso) return;
+
+            const reduzirMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let dadosVisiveis = false;
+            let formularioVisivel = false;
+
+            function descerParaDados() {
+                passoDados.scrollIntoView({ behavior: reduzirMovimento ? 'auto' : 'smooth', block: 'start' });
+            }
+
+            // Ao tocar num serviço: espera um instante (para o cliente ver a seleção) e desce
+            document.querySelectorAll('input[name="servico"]').forEach(opcao => {
+                opcao.addEventListener('change', () => {
+                    avisoTexto.textContent = 'Continue: preencha seus dados';
+                    if (!dadosVisiveis) setTimeout(descerParaDados, 350);
+                });
+            });
+
+            // O aviso também desce ao ser tocado
+            aviso.addEventListener('click', descerParaDados);
+
+            // Mostra o aviso só enquanto o formulário está na tela e os dados ainda estão mais abaixo
+            function atualizarAviso() {
+                const mostrar = formularioVisivel && !dadosVisiveis && passoDados.getBoundingClientRect().top > 0;
+                aviso.classList.toggle('escondido', !mostrar);
+            }
+
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(entradas => {
+                    formularioVisivel = entradas[0].isIntersecting;
+                    atualizarAviso();
+                }).observe(secaoForm);
+
+                new IntersectionObserver(entradas => {
+                    dadosVisiveis = entradas[0].isIntersecting;
+                    atualizarAviso();
+                }, { rootMargin: '0px 0px -35% 0px' }).observe(passoDados);
+            }
         })();
     </script>
 
